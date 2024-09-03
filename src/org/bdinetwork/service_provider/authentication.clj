@@ -132,7 +132,13 @@
         (f request)))))
 
 (defn wrap-authentication
-  [f opts]
+  "Middleware to add a `/connect/token` endpoint.  It requires both
+  `ring.middleware.json/wrap-json-response` and
+  `ring.middleware.params/wrap-params` to function and expects an
+  `association` on the request which implements
+  `org.bdinetwork.service-provider.association/Association`."
+  [f {:keys [private-key server-id] :as opts}]
+  {:pre [private-key server-id]}
   (-> f
       (wrap-client-assertion opts)
       (access-token/wrap-access-token opts)))
