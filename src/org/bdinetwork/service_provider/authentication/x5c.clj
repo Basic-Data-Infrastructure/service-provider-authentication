@@ -6,6 +6,7 @@
             [buddy.core.certificates :as certificates])
   (:import java.io.StringReader
            org.bouncycastle.cert.X509CertificateHolder
+           org.bouncycastle.cert.jcajce.JcaX509CertificateConverter
            org.bouncycastle.asn1.x509.KeyUsage))
 
 (defn- cert-reader
@@ -35,6 +36,13 @@
       hash/sha256
       codecs/bytes->hex
       string/upper-case))
+
+(defn subject-name
+  [cert]
+  (-> (JcaX509CertificateConverter.)
+      (.getCertificate cert)
+      .getSubjectX500Principal
+      (.getName "RFC2253" {"2.5.4.5" "SERIALNUMBER"})))
 
 (defn trusted-cert?
   [cert trusted-list]

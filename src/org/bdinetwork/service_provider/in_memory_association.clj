@@ -1,6 +1,10 @@
 (ns org.bdinetwork.service-provider.in-memory-association
   (:require [org.bdinetwork.service-provider.ishare-validator :refer [parse-yaml validate]]
-            [org.bdinetwork.service-provider.association :refer [Association]]))
+            [org.bdinetwork.service-provider.authentication.x5c :refer [fingerprint subject-name]]
+            [buddy.core.codecs :as codecs]
+            [buddy.core.certificates :as certificates]
+            [org.bdinetwork.service-provider.association :refer [Association]]
+            [buddy.core.keys :as keys]))
 
 (defrecord InMemoryAssociation [source]
   Association
@@ -30,7 +34,41 @@
     (throw (ex-info "Invalid party in data source" {:issues issues})))
   (->InMemoryAssociation source))
 
-(defn read-source
-  "Read source data from yaml file at `path`"
+(defn- read-certificate-info
   [path]
-  (parse-yaml path))
+  (let [c (certificates/certificate path)]
+    {"x5t#s256"         (fingerprint c)
+     "x5c"              (codecs/bytes->b64-str (.getEncoded c))
+     "subject_name"     (subject-name c)
+     "enabled_from"     (str (.toInstant (.getNotBefore c)))
+     "certificate_type" "Unknown"}))
+
+(defn- parse-certificate
+  [cert]
+  (if (string? cert)
+    (read-certificate-info cert)
+    cert))
+
+(defn- parse-party
+  "Parse party info; reads the party's certificates from source pems."
+  [party]
+  (update party "certificates"
+          #(map parse-certificate %)))
+
+(defn- parse-ca
+  "Parse CA info; reads from file is ca-info is a string"
+  [ca-info]
+  (if (string? ca-info)
+    (let [c (certificates/certificate ca-info)]
+      {"subject"                 (subject-name c)
+       "certificate_fingerprint" (fingerprint c)
+       "validity"                "Valid"
+       "status"                  "Granted"})
+    ca-info))
+
+(defn read-source
+  "Read source data from yaml file at `path`."
+  [path]
+  (-> (parse-yaml path)
+      (update "parties" #(map parse-party %))
+      (update "trusted_list" #(map parse-ca %))))
