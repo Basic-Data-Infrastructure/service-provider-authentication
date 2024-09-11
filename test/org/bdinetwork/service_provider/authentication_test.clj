@@ -4,7 +4,7 @@
             [clojure.test :refer [deftest is]]
             [nl.jomco.http-status-codes :as status]
             [org.bdinetwork.service-provider.authentication :as auth]
-            [org.bdinetwork.service-provider.in-memory-association :refer [in-memory-association]]
+            [org.bdinetwork.service-provider.in-memory-association :refer [in-memory-association read-source]]
             [org.bdinetwork.ishare.jwt :as jwt]))
 
 (deftest jti
@@ -19,7 +19,7 @@
 (def server-id "EU.EORI.SERVER")
 
 (def association
-  (in-memory-association "test/test-config.yml"))
+  (in-memory-association (read-source "test/test-config.yml")))
 
 (def server-private-key
   (keys/private-key "test/pem/server.key.pem"))

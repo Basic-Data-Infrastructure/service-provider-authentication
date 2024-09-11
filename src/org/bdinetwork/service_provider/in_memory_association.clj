@@ -22,10 +22,15 @@
     (get source "trusted_list")))
 
 (defn in-memory-association
-  "Create a new in-memory Assocation YAML file `in`."
-  [in]
-  (let [source (parse-yaml in)]
-    (when-let [issues (validate (get source "parties")
-                                ["components" "schemas" "PartiesInfo" "properties" "data"])]
-      (throw (ex-info "Invalid party in data source" {:issues issues})))
-    (->InMemoryAssociation source)))
+  "Create a new in-memory Assocation from source data"
+  [source]
+  {:pre [(map? source)]}
+  (when-let [issues (validate (get source "parties")
+                              ["components" "schemas" "PartiesInfo" "properties" "data"])]
+    (throw (ex-info "Invalid party in data source" {:issues issues})))
+  (->InMemoryAssociation source))
+
+(defn read-source
+  "Read source data from yaml file at `path`"
+  [path]
+  (parse-yaml path))

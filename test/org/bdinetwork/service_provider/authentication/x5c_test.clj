@@ -2,7 +2,7 @@
   (:require [clojure.string :as string]
             [clojure.test :refer [deftest is]]
             [org.bdinetwork.service-provider.authentication.x5c :as x5c]
-            [org.bdinetwork.service-provider.in-memory-association :refer [in-memory-association]]))
+            [org.bdinetwork.service-provider.in-memory-association :refer [in-memory-association read-source]]))
 
 (defn pem->x5c
   "Read chain file into vector of certificates."
@@ -22,7 +22,7 @@
         (str "fingerprint from openssl matches for " party))))
 
 (def association
-  (in-memory-association "test/test-config.yml"))
+  (in-memory-association (read-source "test/test-config.yml")))
 
 (def client-x5c (pem->x5c "test/pem/client.x5c.pem"))
 
