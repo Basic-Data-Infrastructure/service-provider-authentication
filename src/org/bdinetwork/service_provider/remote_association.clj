@@ -9,13 +9,15 @@
   Association
   (party [_ party-id]
     (-> client-data
-         (assoc :ishare/message-type :party, :ishare/party-id party-id)
-         (client/exec)
-         (walk/stringify-keys)))
+        (assoc :ishare/message-type :party, :ishare/party-id party-id)
+        (client/exec)
+        :ishare/result
+        (walk/stringify-keys)))
   (trusted-list [_]
     (-> client-data
         (assoc :ishare/message-type :trusted-list)
         (client/exec)
+        :ishare/result
         (walk/stringify-keys))))
 
 (defn remote-association
