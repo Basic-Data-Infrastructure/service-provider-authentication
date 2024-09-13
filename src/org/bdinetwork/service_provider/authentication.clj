@@ -5,6 +5,7 @@
             [org.bdinetwork.service-provider.authentication.access-token :as access-token]
             [org.bdinetwork.service-provider.authentication.x5c :as x5c]
             [org.bdinetwork.service-provider.association :as association]
+            [clojure.tools.logging.readable :as log]
             [org.bdinetwork.ishare.jwt :as ishare.jwt]))
 
 ;; Client assertions may only be used once. We keep track of the
@@ -98,14 +99,13 @@
             (let [party (association/party association client_id)]
               (cond
                 (not party)
-                (bad-request "Invalid client")
+                (bad-request (str "Unknown client '" client_id "'"))
 
                 (not (some #(= client-cert (get % "x5c")) (party "certificates")))
-                ;; TODO: check start_time and end_time
-                (bad-request "Incorrect party certificate")
+                (bad-request (str "Incorrect client certificate for '" client_id "'"))
 
                 (not= "Active" (get-in party ["adherence" "status"]))
-                (bad-request "Party not active")
+                (bad-request (str "Client '" client_id "' not active"))
 
                 :else
                 (let [token (access-token/mk-access-token {:client-id                client_id
@@ -124,6 +124,7 @@
 
 (defn wrap-client-assertion
   [f opts]
+  {:pre [(:access-token-ttl-seconds opts)]}
   (let [jti-cache-atom (mk-jti-cache-atom)]
     (fn client-assertion-wrapper
       [{:keys [uri] :as request}]

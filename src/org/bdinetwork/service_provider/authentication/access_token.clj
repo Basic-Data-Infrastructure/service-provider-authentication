@@ -39,6 +39,7 @@
 
   Throws exception if access token is invalid."
   [access-token {:keys [server-id public-key access-token-ttl-seconds]}]
+  {:pre [server-id public-key access-token-ttl-seconds]}
   (let [decoded (jwt/decode-header access-token)]
     (when (not= {:alg :rs256 :typ "JWT"} decoded)
       (throw (ex-info "Invalid JWT header" {:header decoded}))))
