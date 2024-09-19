@@ -95,10 +95,15 @@
       :as   opts}]
   (fn access-token-wrapper [request]
     (if-let [access-token (get-bearer-token request)]
-      (try
-        (f (assoc request
-                  :client-id (access-token->client-id access-token opts)))
-        (catch Exception e
-          (log/error "Invalid access token" e)
-          invalid-token-response))
+      ;; This (if-let [... (try ...)] ...) construct is messy.
+      ;;
+      ;; We want to capture exceptions thrown when parsing acess
+      ;; tokens but exceptions in (f request) should be left
+      ;; alone.
+      (if-let [client-id (try (access-token->client-id access-token opts)
+                              (catch Exception e
+                                (log/error "Invalid access token" e)
+                                nil))]
+        (f (assoc request :client-id client-id))
+        invalid-token-response)
       (f request))))
