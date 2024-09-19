@@ -44,17 +44,35 @@
     (when (not= {:alg :rs256 :typ "JWT"} decoded)
       (throw (ex-info "Invalid JWT header" {:header decoded}))))
   (let [{:keys [iss sub aud iat nbf exp jti]} (jwt/unsign access-token public-key {:alg :rs256 :leeway 5})]
-    (if (and (= iss server-id)
-             (= aud server-id)
-             (some? sub)
-             (int? iat)
-             (int? exp)
-             (int? nbf)
-             (= iat nbf)
-             (= exp (+ iat access-token-ttl-seconds))
-             (string? jti))
-      sub
-      (throw (ex-info "Invalid access token" {})))))
+    (cond (not= iss server-id)
+          (throw (ex-info "Server-id is not iss" {:iss iss :server-id server-id}))
+
+          (not= aud server-id)
+          (throw (ex-info "Server-id is not aud" {:aud aud :server-id server-id}))
+
+          (not (some? sub))
+          (throw (ex-info "No sub" {:sub sub}))
+
+          (not (int? iat))
+          (throw (ex-info "iat is not integer" {:iat iat}))
+
+          (not (int? exp))
+          (throw (ex-info "exp is not integer" {:exp exp}))
+
+          (not (int? nbf))
+          (throw (ex-info "nbf is not integer" {:nbf nbf}))
+
+          (not= iat nbf)
+          (throw (ex-info "nbf is not iat" {:nbf nbf :iat iat}))
+
+          (not= access-token-ttl-seconds (- exp iat))
+          (throw (ex-info "expiry is not correct" {:exp exp :iat iat :access-token-ttl-seconds access-token-ttl-seconds}))
+
+          (not (string? jti))
+          (throw (ex-info "jti is not a string" {:jti jti}))
+
+          :else
+          sub)))
 
 (defn- get-bearer-token
   [request]
