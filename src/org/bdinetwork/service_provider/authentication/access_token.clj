@@ -45,31 +45,31 @@
       (throw (ex-info "Invalid JWT header" {:header decoded}))))
   (let [{:keys [iss sub aud iat nbf exp jti]} (jwt/unsign access-token public-key {:alg :rs256 :leeway 5})]
     (cond (not= iss server-id)
-          (throw (ex-info "Server-id is not iss" {:iss iss :server-id server-id}))
+          (throw (ex-info "Claim iss is not server-id" {:iss iss :server-id server-id}))
 
           (not= aud server-id)
-          (throw (ex-info "Server-id is not aud" {:aud aud :server-id server-id}))
+          (throw (ex-info "Claim aud is not server-id" {:aud aud :server-id server-id}))
 
           (not (some? sub))
-          (throw (ex-info "No sub" {:sub sub}))
+          (throw (ex-info "Claim sub missing" {:sub sub}))
 
           (not (int? iat))
-          (throw (ex-info "iat is not integer" {:iat iat}))
+          (throw (ex-info "Claim iat is not an integer" {:iat iat}))
 
           (not (int? exp))
-          (throw (ex-info "exp is not integer" {:exp exp}))
+          (throw (ex-info "Claim exp is not an integer" {:exp exp}))
 
           (not (int? nbf))
-          (throw (ex-info "nbf is not integer" {:nbf nbf}))
+          (throw (ex-info "Claim nbf is not an integer" {:nbf nbf}))
 
           (not= iat nbf)
-          (throw (ex-info "nbf is not iat" {:nbf nbf :iat iat}))
+          (throw (ex-info "Claim nbf is not iat" {:nbf nbf :iat iat}))
 
           (not= access-token-ttl-seconds (- exp iat))
-          (throw (ex-info "expiry is not correct" {:exp exp :iat iat :access-token-ttl-seconds access-token-ttl-seconds}))
+          (throw (ex-info "Expiry is incorrect" {:exp exp :iat iat :access-token-ttl-seconds access-token-ttl-seconds}))
 
           (not (string? jti))
-          (throw (ex-info "jti is not a string" {:jti jti}))
+          (throw (ex-info "Claim jti is not a string" {:jti jti}))
 
           :else
           sub)))
@@ -97,7 +97,7 @@
     (if-let [access-token (get-bearer-token request)]
       ;; This (if-let [... (try ...)] ...) construct is messy.
       ;;
-      ;; We want to capture exceptions thrown when parsing acess
+      ;; We want to capture exceptions thrown when parsing access
       ;; tokens but exceptions in (f request) should be left
       ;; alone.
       (if-let [client-id (try (access-token->client-id access-token opts)
