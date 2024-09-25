@@ -12,13 +12,15 @@
         (assoc :ishare/message-type :party, :ishare/party-id party-id)
         (client/exec)
         :ishare/result
-        (walk/stringify-keys)))
+        (walk/stringify-keys)
+        (get "party_info")))
   (trusted-list [_]
     (-> client-data
         (assoc :ishare/message-type :trusted-list)
         (client/exec)
         :ishare/result
-        (walk/stringify-keys))))
+        (walk/stringify-keys)
+        (get "trusted_list"))))
 
 (defn remote-association
   [{:ishare/keys [client-id x5c private-key satellite-id satellite-endpoint]
