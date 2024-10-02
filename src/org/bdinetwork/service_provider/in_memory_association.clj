@@ -3,8 +3,7 @@
             [org.bdinetwork.service-provider.authentication.x5c :refer [fingerprint subject-name]]
             [buddy.core.codecs :as codecs]
             [buddy.core.certificates :as certificates]
-            [org.bdinetwork.service-provider.association :refer [Association]]
-            [buddy.core.keys :as keys]))
+            [org.bdinetwork.service-provider.association :refer [Association]]))
 
 (defrecord InMemoryAssociation [source]
   Association

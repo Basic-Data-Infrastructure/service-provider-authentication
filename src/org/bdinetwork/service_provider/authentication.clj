@@ -5,7 +5,6 @@
             [org.bdinetwork.service-provider.authentication.access-token :as access-token]
             [org.bdinetwork.service-provider.authentication.x5c :as x5c]
             [org.bdinetwork.service-provider.association :as association]
-            [clojure.tools.logging.readable :as log]
             [org.bdinetwork.ishare.jwt :as ishare.jwt]))
 
 ;; Client assertions may only be used once. We keep track of the
@@ -43,9 +42,10 @@
 ;; See also https://1961974616-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FhIVZwp4ZxhYhb39SlKH3%2Fuploads%2FqGr0dWPuez172U5Fo8IU%2F190501D_Access_token_validation.pdf?alt=media
 
 (defn bad-request
-  [msg]
+  [msg info]
   {:status status/bad-request
-   :body msg})
+   :body   {:message msg
+            :info    info}})
 
 (defn check-access-token-request
   [{:keys [request-method]
@@ -55,16 +55,20 @@
     {:status status/method-not-allowed}
 
     (not= "client_credentials" grant_type)
-    (bad-request "Invalid grant_type")
+    (bad-request "Invalid grant_type"
+                 {:grant_type grant_type})
 
     (not= "iSHARE" scope)
-    (bad-request "Invalid scope")
+    (bad-request "Invalid scope"
+                 {:scope scope})
 
     (string/blank? client_id)
-    (bad-request "Invalid client_id")
+    (bad-request "Invalid client_id"
+                 {:client_id client_id})
 
     (not= "urn:ietf:params:oauth:client-assertion-type:jwt-bearer" client_assertion_type)
-    (bad-request "Invalid client_assertion_type")))
+    (bad-request "Invalid client_assertion_type"
+                 {:client_assertion_type client_assertion_type})))
 
 (defn client-assertion-response
   [{:keys                                [association]
@@ -78,34 +82,48 @@
               client-cert                       (first x5c)]
           (cond
             (not= client_id sub)
-            (bad-request "sub is not client_id")
+            (bad-request "sub is not client_id"
+                         {:client_id client_id
+                          :sub       sub})
 
             (not= client_id iss)
-            (bad-request "iss is not client_id")
+            (bad-request "iss is not client_id"
+                         {:client_id client_id
+                          :iss       iss})
 
             (not (new-jti?! jti-cache-atom jti))
-            (bad-request "Stale client_assertion")
+            (bad-request "Stale client_assertion"
+                         {:jti jti})
 
             (not= aud server-id)
-            (bad-request "Invalid audience claim")
+            (bad-request "Invalid audience claim"
+                         {:aud       aud
+                          :server-id server-id})
 
             (not= (- exp 30) iat)
-            (bad-request "Invalid expiry time")
+            (bad-request "Invalid expiry time"
+                         {:iat  iat
+                          :exp  exp
+                          :diff (- exp iat)})
 
             (not (x5c/validate-chain x5c (association/trusted-list association)))
-            (bad-request "Invalid certificate chain")
+            (bad-request "Invalid certificate chain" nil)
 
             :else
             (let [party (association/party association client_id)]
               (cond
                 (not party)
-                (bad-request (str "Unknown client '" client_id "'"))
+                (bad-request (str "Unknown client '" client_id "'")
+                             {:client_id client_id})
 
                 (not (some #(= client-cert (get % "x5c")) (party "certificates")))
-                (bad-request (str "Incorrect client certificate for '" client_id "'"))
+                (bad-request (str "Incorrect client certificate for '" client_id "'")
+                             {:client_id client_id})
 
                 (not= "Active" (get-in party ["adherence" "status"]))
-                (bad-request (str "Client '" client_id "' not active"))
+                (bad-request (str "Client '" client_id "' not active")
+                             {:client_id client_id
+                              :status    (get-in party ["adherence" "status"])})
 
                 :else
                 (let [token (access-token/mk-access-token {:client-id                client_id
@@ -119,7 +137,8 @@
         (catch clojure.lang.ExceptionInfo e
           (let [{:keys [type]} (ex-data e)]
             (if (= type :validation) ;; validation error in JWT
-              (bad-request (ex-message e))
+              (bad-request (ex-message e)
+                           (ex-data e))
               (throw e)))))))
 
 (defn wrap-client-assertion
