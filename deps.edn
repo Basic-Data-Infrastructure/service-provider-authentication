@@ -1,5 +1,5 @@
 {:deps    {org.bdinetwork/clj-ishare-client {:git/url "https://github.com/Basic-Data-Infrastructure/clj-ishare-client"
-                                             :git/sha "9735e594c49ff8b6da158bcde9589cead09d3a20"}
+                                             :git/sha "05597ca0ea86ad2d24e7c990db8686bf91c6f28e"}
            org.bdinetwork/clj-ishare-jwt    {:git/url "https://github.com/Basic-Data-Infrastructure/clj-ishare-jwt.git"
                                              :git/sha "977bb1f393a22d964819a0caf627b3d2840de086"}
            nl.jomco/openapi-v3-validator    {:mvn/version "0.2.1"}
