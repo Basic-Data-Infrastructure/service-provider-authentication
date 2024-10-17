@@ -32,7 +32,7 @@
         (get "trusted_list"))))
 
 (defn remote-association
-  [{:ishare/keys [client-id x5c private-key satellite-id satellite-endpoint]
+  [{:ishare/keys [client-id x5c private-key satellite-id satellite-base-url]
     :as client-data}]
-  {:pre [client-id x5c private-key satellite-id satellite-endpoint]}
+  {:pre [client-id x5c private-key satellite-id satellite-base-url]}
   (->RemoteAssociation client-data))
